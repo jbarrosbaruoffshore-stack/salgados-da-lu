@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7b500" />
+  <meta name="description" content="Cardápio online da Salgados da Lu. Salgadinhos, doces, encomendas, Pix e pedidos pelo WhatsApp." />
+  <title>Salgados da Lu | Cardápio Online</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="#inicio" class="brand">
+      <span class="brand-mark">Lu</span>
+      <span>Salgados da Lu</span>
+    </a>
+    <nav>
+      <a href="#cardapio">Cardápio</a>
+      <a href="#galeria">Fotos</a>
+      <a href="#pix">Pix</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </header>
+
+  <section id="inicio" class="hero">
+    <div class="hero-text">
+      <p class="tag">Salgados, doces e encomendas</p>
+      <h1>Salgados da Lu</h1>
+      <p class="subtitle">Delícias caseiras para festas, eventos e aquele lanche especial. Peça pelo WhatsApp e consulte disponibilidade de entrega.</p>
+      <div class="hero-actions">
+        <a href="#cardapio" class="btn primary">Ver cardápio</a>
+        <a id="whatsHero" class="btn whats" target="_blank" rel="noopener">Pedir no WhatsApp</a>
+      </div>
+      <div class="badges">
+        <span>💳 Cartões e Pix</span>
+        <span>🛵 Entrega</span>
+        <span>🎉 Encomendas</span>
+      </div>
+    </div>
+    <div class="hero-photo-wrap">
+      <img src="assets/logo/fachada.jpg" alt="Banner da Salgados da Lu" class="hero-photo" />
+    </div>
+  </section>
+
+  <main>
+    <section class="quick-info">
+      <div class="info-card">
+        <strong>📲 WhatsApp</strong>
+        <span>(21) 99845-4725</span>
+      </div>
+      <div class="info-card">
+        <strong>💳 Pagamento</strong>
+        <span>Cartões e Pix</span>
+      </div>
+      <div class="info-card">
+        <strong>📦 Pedidos</strong>
+        <span>Salgados, doces e combos</span>
+      </div>
+    </section>
+
+    <section id="cardapio" class="section">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Escolha seus itens</p>
+          <h2>Cardápio</h2>
+        </div>
+        <div class="admin-actions">
+          <button id="adminBtn" class="btn outline">Editar preços</button>
+          <button id="resetBtn" class="btn ghost" title="Limpa o carrinho">Limpar carrinho</button>
+        </div>
+      </div>
+
+      <div class="notice">
+        <strong>Atenção:</strong> os valores podem variar conforme quantidade e encomenda. Consulte a disponibilidade pelo WhatsApp.
+      </div>
+
+      <div class="filters" id="filters"></div>
+      <div id="menu" class="menu"></div>
+    </section>
+
+    <section id="galeria" class="section">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Fotos reais</p>
+          <h2>Galeria dos salgados</h2>
+        </div>
+      </div>
+      <div id="gallery" class="gallery"></div>
+    </section>
+
+    <section id="pix" class="section pix-section">
+      <div>
+        <p class="eyebrow">Pagamento rápido</p>
+        <h2>Pix da Salgados da Lu</h2>
+        <p>Nome: <strong>Luciana de Barros Santos</strong></p>
+        <p>Chave Pix:</p>
+        <div class="pix-key" id="pixKey">luciana.barros19766@gmail.com</div>
+        <button class="btn primary" onclick="copyPix()">Copiar chave Pix</button>
+      </div>
+      <img src="assets/logo/pix.jpg" alt="QR Code Pix Salgados da Lu" class="pix-img" />
+    </section>
+
+    <section id="contato" class="section contact">
+      <p class="eyebrow">Fale com a Lu</p>
+      <h2>Faça seu pedido</h2>
+      <p>Monte seu pedido no cardápio ou chame direto pelo WhatsApp.</p>
+      <a id="whatsContact" class="btn whats" target="_blank" rel="noopener">Abrir WhatsApp</a>
+    </section>
+  </main>
+
+  <div id="orderBar" class="order-bar hidden">
+    <div>
+      <strong id="orderCount">0 itens</strong>
+      <span id="orderPreview">Seu pedido está vazio</span>
+    </div>
+    <a id="finishOrder" class="btn whats" target="_blank" rel="noopener">Finalizar pedido</a>
+  </div>
+
+  <footer>
+    <p>© Salgados da Lu • Feito com carinho ❤️</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
