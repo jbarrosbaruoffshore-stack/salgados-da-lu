@@ -12,8 +12,8 @@ const products = [
   { id: 'croquete-frango', name: 'Croquete de Frango', category: 'Salgados', price: '', image: 'foto-01.jpg' },
   { id: 'espetinho-frango', name: 'Espetinho de Frango', category: 'Salgados', price: '', image: 'foto-03.jpg' },
   { id: 'escondidinho-camarao', name: 'Escondidinho de Camarão', category: 'Salgados', price: '', image: 'foto-09.jpg' },
-  { id: 'doce-aipim', name: 'Doce de Aipim', category: 'Doces', price: '', image: 'foto-17.jpg' },
-  { id: 'bolo-pote', name: 'Bolo de Pote', category: 'Doces', price: '', image: 'foto-04.jpg' },
+  { id: 'doce-aipim', name: 'Doce de Aipim', category: 'Doces', price: '', image: 'doce-de-aipim.jpg' },
+  { id: 'bolo-pote', name: 'Bolo de Pote', category: 'Doces', price: '', image: 'bolo-de-pote.jpg' },
   { id: 'combo-festa', name: 'Combo para Festa', category: 'Encomendas', price: '', image: 'foto-15.jpg' }
 ];
 
@@ -83,9 +83,15 @@ function createQuantityButton(symbol, label, disabled, onClick) {
 }
 
 function setImageDimensions(image, fileName) {
-  const isLandscape = fileName.endsWith('foto-16.jpg');
-  image.width = isLandscape ? 1000 : 562;
-  image.height = isLandscape ? 562 : 1000;
+  const dimensions = {
+    'foto-16.jpg': [1000, 562],
+    'bolo-de-pote.jpg': [515, 313],
+    'doce-de-aipim.jpg': [1200, 800]
+  };
+  const name = fileName.split('/').pop();
+  const [width, height] = dimensions[name] || [562, 1000];
+  image.width = width;
+  image.height = height;
 }
 
 function createProductCard(product) {
