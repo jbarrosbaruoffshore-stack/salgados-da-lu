@@ -20,7 +20,6 @@ const products = [
 const galleryPhotos = [
   { src: 'assets/fotos/foto-02.jpg', alt: 'Salgados preparados pela Lu' },
   { src: 'assets/fotos/foto-05.jpg', alt: 'Coxinhas da Salgados da Lu' },
-  { src: 'assets/fotos/foto-08.jpg', alt: 'Encomenda de salgados pronta' },
   { src: 'assets/fotos/foto-13.jpg', alt: 'Salgados variados da Lu' },
   { src: 'assets/fotos/foto-16.jpg', alt: 'Kibe de forno preparado pela Lu' },
   { src: 'assets/fotos/foto-19.jpg', alt: 'Produção da Salgados da Lu' }
