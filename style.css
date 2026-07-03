@@ -541,7 +541,7 @@ a:focus-visible {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
@@ -552,8 +552,7 @@ a:focus-visible {
   background: #624238;
 }
 
-.gallery figure:nth-child(1),
-.gallery figure:nth-child(6) {
+.gallery figure:nth-child(1) {
   grid-column: span 2;
 }
 
@@ -750,8 +749,7 @@ footer p {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .gallery figure:nth-child(1),
-  .gallery figure:nth-child(6) {
+  .gallery figure:nth-child(1) {
     grid-column: auto;
   }
 }
