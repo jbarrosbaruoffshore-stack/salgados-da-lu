@@ -1,19 +1,24 @@
 # Salgados da Lu
 
-Cardápio online da Salgados da Lu.
+Cardápio online com seleção de itens e envio do pedido pelo WhatsApp.
+
+## Atualizar o cardápio
+
+Os produtos ficam no início do arquivo `script.js`, dentro da lista `products`.
+
+Cada produto tem:
+
+- `name`: nome exibido no cardápio;
+- `category`: categoria usada nos filtros;
+- `price`: preço ou descrição, por exemplo `R$ 8,00` ou `100 un. — R$ 85,00`;
+- `image`: nome da foto dentro de `assets/fotos`.
+
+Se o campo `price` ficar vazio, o site mostra “Consulte o valor”.
 
 ## Publicar no GitHub Pages
 
-1. Extraia este ZIP no computador.
-2. No GitHub, crie o repositório `salgados-da-lu`.
-3. Faça upload dos arquivos de dentro da pasta, não envie o ZIP fechado.
-4. Vá em **Settings > Pages**.
-5. Configure **Deploy from a branch**, branch **main**, pasta **/(root)**.
-6. Salve e aguarde o link ficar disponível.
+1. Substitua os arquivos do repositório pelos arquivos desta pasta.
+2. Confirme que o GitHub Pages continua configurado para a branch `main` e a pasta `/(root)`.
+3. Aguarde alguns minutos para a atualização aparecer.
 
-## Edição de preços
-
-No site, clique em **Editar preços**.  
-Senha padrão: `lu2026`
-
-Observação: no GitHub Pages, as alterações feitas pelo painel ficam salvas no navegador usado. Para atualizar para todos os clientes, edite os preços no arquivo `script.js` ou use uma versão com Google Sheets/Firebase.
+Não há senha ou painel de administração no site público. Em um site estático, uma senha colocada no JavaScript fica visível para qualquer visitante e alterações salvas no navegador não atualizam o cardápio dos clientes.
