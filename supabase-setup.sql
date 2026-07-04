@@ -185,3 +185,104 @@ where not exists (
   from public.gallery_photos current_photo
   where current_photo.image_url = seed.image_url
 );
+
+create table if not exists public.business_hours (
+  day_of_week smallint primary key check (day_of_week between 0 and 6),
+  is_open boolean not null default false,
+  open_time time,
+  close_time time,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.special_dates (
+  date date primary key,
+  is_open boolean not null default false,
+  open_time time,
+  close_time time,
+  note text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+alter table public.business_hours enable row level security;
+alter table public.special_dates enable row level security;
+
+drop policy if exists "Horarios publicos" on public.business_hours;
+create policy "Horarios publicos"
+on public.business_hours
+for select
+to anon
+using (true);
+
+drop policy if exists "Administrador le horarios" on public.business_hours;
+create policy "Administrador le horarios"
+on public.business_hours
+for select
+to authenticated
+using ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+drop policy if exists "Administrador cria horarios" on public.business_hours;
+create policy "Administrador cria horarios"
+on public.business_hours
+for insert
+to authenticated
+with check ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+drop policy if exists "Administrador atualiza horarios" on public.business_hours;
+create policy "Administrador atualiza horarios"
+on public.business_hours
+for update
+to authenticated
+using ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com')
+with check ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+drop policy if exists "Datas especiais publicas" on public.special_dates;
+create policy "Datas especiais publicas"
+on public.special_dates
+for select
+to anon
+using (true);
+
+drop policy if exists "Administrador le datas especiais" on public.special_dates;
+create policy "Administrador le datas especiais"
+on public.special_dates
+for select
+to authenticated
+using ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+drop policy if exists "Administrador cria datas especiais" on public.special_dates;
+create policy "Administrador cria datas especiais"
+on public.special_dates
+for insert
+to authenticated
+with check ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+drop policy if exists "Administrador atualiza datas especiais" on public.special_dates;
+create policy "Administrador atualiza datas especiais"
+on public.special_dates
+for update
+to authenticated
+using ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com')
+with check ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+drop policy if exists "Administrador remove datas especiais" on public.special_dates;
+create policy "Administrador remove datas especiais"
+on public.special_dates
+for delete
+to authenticated
+using ((select auth.jwt() ->> 'email') = 'lucianasalgado@admin.salgadosdalu.com');
+
+insert into public.business_hours (
+  day_of_week,
+  is_open,
+  open_time,
+  close_time
+)
+values
+  (0, false, null, null),
+  (1, true, '08:00', '18:00'),
+  (2, true, '08:00', '18:00'),
+  (3, true, '08:00', '18:00'),
+  (4, true, '08:00', '18:00'),
+  (5, true, '08:00', '18:00'),
+  (6, false, null, null)
+on conflict (day_of_week) do nothing;

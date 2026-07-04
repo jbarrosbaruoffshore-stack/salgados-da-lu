@@ -26,8 +26,28 @@ const fallbackGalleryPhotos = [
   { image_url: 'assets/fotos/foto-19.jpg', alt: 'Produção da Salgados da Lu' }
 ];
 
+const fallbackBusinessHours = [
+  { day_of_week: 0, is_open: false, open_time: null, close_time: null },
+  { day_of_week: 1, is_open: true, open_time: '08:00', close_time: '18:00' },
+  { day_of_week: 2, is_open: true, open_time: '08:00', close_time: '18:00' },
+  { day_of_week: 3, is_open: true, open_time: '08:00', close_time: '18:00' },
+  { day_of_week: 4, is_open: true, open_time: '08:00', close_time: '18:00' },
+  { day_of_week: 5, is_open: true, open_time: '08:00', close_time: '18:00' },
+  { day_of_week: 6, is_open: false, open_time: null, close_time: null }
+];
+
+const dayLabels = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const dayDisplayOrder = [1, 2, 3, 4, 5, 6, 0];
+
 let products = [...fallbackProducts];
 let galleryPhotos = [...fallbackGalleryPhotos];
+let businessHours = [...fallbackBusinessHours];
+let specialDates = [];
+let currentStoreStatus = {
+  isOpen: false,
+  closedAllDay: false,
+  message: 'Estamos verificando o horário de funcionamento.'
+};
 let cart = loadCart();
 let selectedCategory = 'Todos';
 
@@ -48,13 +68,15 @@ function catalogClient() {
 async function loadCatalog() {
   const client = catalogClient();
   if (!client) {
+    renderBusinessInfo();
+    setupLinks();
     renderGallery();
     render();
     return;
   }
 
   try {
-    const [productsResponse, galleryResponse] = await Promise.all([
+    const [productsResponse, galleryResponse, hoursResponse, specialDatesResponse] = await Promise.all([
       client
         .from('products')
         .select('id,name,category,price,image_url,sort_order')
@@ -64,20 +86,243 @@ async function loadCatalog() {
         .from('gallery_photos')
         .select('id,image_url,alt,sort_order')
         .eq('active', true)
-        .order('sort_order', { ascending: true })
+        .order('sort_order', { ascending: true }),
+      client
+        .from('business_hours')
+        .select('day_of_week,is_open,open_time,close_time')
+        .order('day_of_week', { ascending: true }),
+      client
+        .from('special_dates')
+        .select('date,is_open,open_time,close_time,note')
+        .order('date', { ascending: true })
     ]);
 
     if (productsResponse.error) throw productsResponse.error;
     if (galleryResponse.error) throw galleryResponse.error;
+    if (hoursResponse.error) throw hoursResponse.error;
+    if (specialDatesResponse.error) throw specialDatesResponse.error;
 
     products = productsResponse.data || [];
     galleryPhotos = galleryResponse.data || [];
+    businessHours = hoursResponse.data?.length ? hoursResponse.data : [...fallbackBusinessHours];
+    specialDates = specialDatesResponse.data || [];
   } catch (error) {
     console.warn('O cardápio online não pôde ser carregado. Usando a cópia local.', error);
   }
 
+  renderBusinessInfo();
+  setupLinks();
   renderGallery();
   render();
+}
+
+function storeNow() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const weekdayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+  return {
+    date: `${values.year}-${values.month}-${values.day}`,
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    dayOfWeek: weekdayMap[values.weekday],
+    minutes: Number(values.hour) * 60 + Number(values.minute)
+  };
+}
+
+function timeText(value) {
+  return String(value || '').slice(0, 5);
+}
+
+function timeMinutes(value) {
+  const [hours, minutes] = timeText(value).split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function dateWithOffset(baseDate, offset) {
+  const [year, month, day] = baseDate.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + offset)).toISOString().slice(0, 10);
+}
+
+function dayOfWeekForDate(date) {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+function scheduleForDate(date, dayOfWeek = dayOfWeekForDate(date)) {
+  const specialDate = specialDates.find((item) => item.date === date);
+  if (specialDate) {
+    return {
+      isOpen: specialDate.is_open,
+      openTime: specialDate.open_time,
+      closeTime: specialDate.close_time,
+      note: specialDate.note || '',
+      special: true
+    };
+  }
+
+  const regular = businessHours.find((item) => Number(item.day_of_week) === dayOfWeek);
+  return {
+    isOpen: regular?.is_open || false,
+    openTime: regular?.open_time || null,
+    closeTime: regular?.close_time || null,
+    note: '',
+    special: false
+  };
+}
+
+function nextOpeningText(now) {
+  for (let offset = 0; offset <= 14; offset += 1) {
+    const date = dateWithOffset(now.date, offset);
+    const dayOfWeek = dayOfWeekForDate(date);
+    const schedule = scheduleForDate(date, dayOfWeek);
+    if (!schedule.isOpen || !schedule.openTime) continue;
+
+    if (offset === 0 && now.minutes >= timeMinutes(schedule.openTime)) continue;
+    const dayText = offset === 0 ? 'hoje' : offset === 1 ? 'amanhã' : dayLabels[dayOfWeek].toLowerCase();
+    return `Próxima abertura: ${dayText}, às ${timeText(schedule.openTime)}.`;
+  }
+  return 'Envie uma mensagem para consultar o próximo atendimento.';
+}
+
+function calculateStoreStatus() {
+  const now = storeNow();
+  const schedule = scheduleForDate(now.date, now.dayOfWeek);
+
+  if (!schedule.isOpen || !schedule.openTime || !schedule.closeTime) {
+    return {
+      isOpen: false,
+      closedAllDay: true,
+      title: 'Estamos fechados hoje',
+      detail: [schedule.note, nextOpeningText(now)].filter(Boolean).join(' — '),
+      message: 'Sei que a loja está fechada hoje. Gostaria de deixar esta mensagem para o próximo horário.',
+      now,
+      schedule
+    };
+  }
+
+  const openMinutes = timeMinutes(schedule.openTime);
+  const closeMinutes = timeMinutes(schedule.closeTime);
+  const isOpen = now.minutes >= openMinutes && now.minutes < closeMinutes;
+
+  if (isOpen) {
+    return {
+      isOpen: true,
+      closedAllDay: false,
+      title: 'Estamos abertos agora',
+      detail: `Atendimento hoje até ${timeText(schedule.closeTime)}.${schedule.note ? ` ${schedule.note}` : ''}`,
+      message: '',
+      now,
+      schedule
+    };
+  }
+
+  const beforeOpening = now.minutes < openMinutes;
+  return {
+    isOpen: false,
+    closedAllDay: false,
+    title: 'Estamos fechados agora',
+    detail: beforeOpening
+      ? `Abrimos hoje às ${timeText(schedule.openTime)}.${schedule.note ? ` ${schedule.note}` : ''}`
+      : nextOpeningText(now),
+    message: 'Sei que a loja está fechada agora. Gostaria de deixar esta mensagem para o próximo horário.',
+    now,
+    schedule
+  };
+}
+
+function renderWeeklySchedule() {
+  const container = document.getElementById('weeklySchedule');
+  container.replaceChildren();
+
+  dayDisplayOrder.forEach((dayOfWeek) => {
+    const schedule = businessHours.find((item) => Number(item.day_of_week) === dayOfWeek);
+    const row = document.createElement('div');
+    row.className = 'weekly-row';
+    const day = document.createElement('span');
+    day.className = 'weekly-day';
+    day.textContent = dayLabels[dayOfWeek];
+    const time = document.createElement('span');
+    const isOpen = schedule?.is_open && schedule.open_time && schedule.close_time;
+    time.className = `weekly-time${isOpen ? '' : ' closed'}`;
+    time.textContent = isOpen
+      ? `${timeText(schedule.open_time)} às ${timeText(schedule.close_time)}`
+      : 'Fechada';
+    row.append(day, time);
+    container.appendChild(row);
+  });
+}
+
+function renderCalendar(now) {
+  const calendar = document.getElementById('monthCalendar');
+  const monthTitle = document.getElementById('calendarMonth');
+  calendar.replaceChildren();
+
+  monthTitle.textContent = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'UTC',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(Date.UTC(now.year, now.month - 1, 1)));
+
+  const firstDay = new Date(Date.UTC(now.year, now.month - 1, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(now.year, now.month, 0)).getUTCDate();
+
+  for (let index = 0; index < firstDay; index += 1) {
+    const spacer = document.createElement('span');
+    spacer.className = 'calendar-spacer';
+    spacer.setAttribute('aria-hidden', 'true');
+    calendar.appendChild(spacer);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${now.year}-${String(now.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const schedule = scheduleForDate(date);
+    const cell = document.createElement('span');
+    cell.className = [
+      'calendar-day',
+      schedule.isOpen ? '' : 'closed',
+      date === now.date ? 'today' : '',
+      schedule.special ? 'special' : ''
+    ].filter(Boolean).join(' ');
+    cell.textContent = day;
+    cell.dataset.note = schedule.note || (schedule.special ? (schedule.isOpen ? 'Especial' : 'Fechada') : '');
+    const status = schedule.isOpen
+      ? `aberta das ${timeText(schedule.openTime)} às ${timeText(schedule.closeTime)}`
+      : 'fechada';
+    cell.setAttribute('aria-label', `${day} de ${monthTitle.textContent}: ${status}${schedule.note ? `. ${schedule.note}` : ''}`);
+    calendar.appendChild(cell);
+  }
+}
+
+function renderBusinessInfo() {
+  currentStoreStatus = calculateStoreStatus();
+  const statusCard = document.getElementById('storeStatus');
+  const statusBadge = document.getElementById('storeStatusBadge');
+  const statusTitle = document.getElementById('storeStatusTitle');
+  const statusDetail = document.getElementById('storeStatusDetail');
+  const closedNotice = document.getElementById('closedNotice');
+
+  statusCard.className = `store-status${currentStoreStatus.isOpen ? '' : ' closed'}`;
+  statusBadge.textContent = currentStoreStatus.isOpen ? 'Aberta agora' : 'Fechada agora';
+  statusTitle.textContent = currentStoreStatus.title;
+  statusDetail.textContent = currentStoreStatus.detail;
+  closedNotice.classList.toggle('hidden', currentStoreStatus.isOpen);
+  closedNotice.querySelector('strong').textContent = currentStoreStatus.closedAllDay
+    ? 'Estamos fechados hoje.'
+    : 'Estamos fechados agora.';
+
+  renderWeeklySchedule();
+  renderCalendar(currentStoreStatus.now);
 }
 
 function loadCart() {
@@ -275,7 +520,7 @@ function orderReference() {
     const savedReference = localStorage.getItem(orderReferenceKey);
     if (savedReference) return savedReference;
 
-    const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+    const date = storeNow().date.replaceAll('-', '');
     const randomPart = Math.random().toString(36).slice(2, 7).toUpperCase();
     const reference = `SL-${date}-${randomPart}`;
     localStorage.setItem(orderReferenceKey, reference);
@@ -299,6 +544,10 @@ function buildOrderMessage() {
     `Pedido: ${reference}`,
     ''
   ];
+
+  if (!currentStoreStatus.isOpen) {
+    lines.push(currentStoreStatus.message, '');
+  }
 
   if (!items.length) {
     lines.push('Pode me enviar o cardápio, os valores e a disponibilidade?');
@@ -374,7 +623,10 @@ async function copyPix() {
 }
 
 function setupLinks() {
-  const greeting = 'Olá! Gostaria de fazer um pedido na Salgados da Lu.';
+  const greeting = [
+    'Olá! Gostaria de falar com a Salgados da Lu.',
+    currentStoreStatus.isOpen ? '' : currentStoreStatus.message
+  ].filter(Boolean).join('\n\n');
   const directLink = buildWhatsAppLink(greeting);
   document.getElementById('whatsHero').href = directLink;
   document.getElementById('whatsContact').href = directLink;
@@ -385,3 +637,9 @@ document.getElementById('copyPixBtn').addEventListener('click', copyPix);
 
 setupLinks();
 loadCatalog();
+
+setInterval(() => {
+  renderBusinessInfo();
+  setupLinks();
+  updateOrderBar();
+}, 60000);

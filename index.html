@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://jbarrosbaruoffshore-stack.github.io/salgados-da-lu/assets/logo/logo-salgados-da-lu.png" />
   <title>Salgados da Lu | Cardápio Online</title>
   <link rel="canonical" href="https://jbarrosbaruoffshore-stack.github.io/salgados-da-lu/" />
-  <link rel="stylesheet" href="style.css?v=20260704-pix1" />
+  <link rel="stylesheet" href="style.css?v=20260704-hours1" />
 </head>
 <body>
   <a class="skip-link" href="#cardapio">Ir para o cardápio</a>
@@ -27,6 +27,7 @@
     </a>
     <nav aria-label="Navegação principal">
       <a href="#cardapio">Cardápio</a>
+      <a href="#horarios">Horários</a>
       <a href="#galeria">Fotos</a>
       <a href="#pix">Pix</a>
       <a href="#contato">Contato</a>
@@ -79,6 +80,53 @@
           <p>Combine valores, pagamento, retirada ou entrega.</p>
         </div>
       </article>
+    </section>
+
+    <section id="horarios" class="section hours-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Atendimento</p>
+          <h2>Horários de funcionamento</h2>
+        </div>
+        <p class="section-intro">Consulte os dias abertos e fechados antes de fazer seu pedido.</p>
+      </div>
+
+      <div id="storeStatus" class="store-status loading" aria-live="polite">
+        <span id="storeStatusBadge" class="store-status-badge">Verificando</span>
+        <div>
+          <h3 id="storeStatusTitle">Consultando o horário de hoje...</h3>
+          <p id="storeStatusDetail"></p>
+        </div>
+      </div>
+
+      <div id="closedNotice" class="closed-notice hidden" role="status">
+        <strong>Estamos fechados agora.</strong>
+        <span>Você ainda pode enviar uma mensagem ou deixar seu pedido. A Lu responderá no próximo horário de atendimento.</span>
+      </div>
+
+      <div class="hours-layout">
+        <article class="hours-card">
+          <h3>Horários da semana</h3>
+          <div id="weeklySchedule" class="weekly-schedule"></div>
+        </article>
+
+        <article class="calendar-card">
+          <div class="calendar-heading">
+            <div>
+              <span class="calendar-kicker">Calendário</span>
+              <h3 id="calendarMonth">Este mês</h3>
+            </div>
+            <div class="calendar-legend" aria-label="Legenda do calendário">
+              <span><i class="open-dot"></i> Aberta</span>
+              <span><i class="closed-dot"></i> Fechada</span>
+            </div>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+          </div>
+          <div id="monthCalendar" class="month-calendar" aria-label="Calendário de funcionamento"></div>
+        </article>
+      </div>
     </section>
 
     <section id="cardapio" class="section menu-section">
@@ -150,6 +198,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=20260704-pix1"></script>
+  <script src="script.js?v=20260704-hours1"></script>
 </body>
 </html>

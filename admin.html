@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#8d1520" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Painel administrativo | Salgados da Lu</title>
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin.css?v=20260704-hours1" />
 </head>
 <body>
   <main class="admin-shell">
@@ -49,6 +49,7 @@
 
       <nav class="admin-nav" aria-label="Seções do painel">
         <a href="#produtos">Produtos e preços</a>
+        <a href="#horarios">Horários e calendário</a>
         <a href="#fotos">Galeria de fotos</a>
       </nav>
 
@@ -105,6 +106,67 @@
         <div id="productsList" class="editor-list" aria-live="polite"></div>
       </section>
 
+      <section id="horarios" class="panel-section hours-admin-panel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Atendimento</p>
+            <h2>Horários e calendário</h2>
+            <p>Defina os dias normais de funcionamento e as exceções, como feriados ou aberturas especiais.</p>
+          </div>
+        </div>
+
+        <form id="businessHoursForm" class="editor-card">
+          <div class="editor-heading">
+            <div>
+              <span class="card-kicker">Semana padrão</span>
+              <h3>Horários de funcionamento</h3>
+            </div>
+          </div>
+          <div id="businessHoursList" class="business-hours-editor" aria-live="polite"></div>
+          <div class="card-actions">
+            <button class="admin-btn primary" type="submit">Salvar horários</button>
+          </div>
+        </form>
+
+        <div class="special-dates-admin">
+          <form id="newSpecialDateForm" class="editor-card">
+            <div class="editor-heading">
+              <div>
+                <span class="card-kicker">Calendário</span>
+                <h3>Adicionar data especial</h3>
+              </div>
+            </div>
+            <div class="form-grid special-date-form-grid">
+              <label>
+                Data
+                <input name="date" type="date" required />
+              </label>
+              <label class="toggle-label">
+                <input name="isOpen" type="checkbox" />
+                Loja aberta nesta data
+              </label>
+              <label>
+                Abre às
+                <input name="openTime" type="time" value="08:00" disabled />
+              </label>
+              <label>
+                Fecha às
+                <input name="closeTime" type="time" value="18:00" disabled />
+              </label>
+              <label class="special-date-note">
+                Observação
+                <input name="note" type="text" placeholder="Ex.: Feriado — loja fechada" />
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="admin-btn primary" type="submit">Adicionar ao calendário</button>
+            </div>
+          </form>
+
+          <div id="specialDatesList" class="special-dates-list" aria-live="polite"></div>
+        </div>
+      </section>
+
       <section id="fotos" class="panel-section gallery-panel">
         <div class="section-title">
           <div>
@@ -138,6 +200,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js"></script>
+  <script src="admin.js?v=20260704-hours1"></script>
 </body>
 </html>

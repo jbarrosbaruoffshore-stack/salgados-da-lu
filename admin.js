@@ -19,9 +19,18 @@ const productsList = document.getElementById('productsList');
 const galleryList = document.getElementById('galleryList');
 const newProductForm = document.getElementById('newProductForm');
 const newPhotoForm = document.getElementById('newPhotoForm');
+const businessHoursForm = document.getElementById('businessHoursForm');
+const businessHoursList = document.getElementById('businessHoursList');
+const newSpecialDateForm = document.getElementById('newSpecialDateForm');
+const specialDatesList = document.getElementById('specialDatesList');
+
+const dayLabels = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const dayDisplayOrder = [1, 2, 3, 4, 5, 6, 0];
 
 let products = [];
 let galleryPhotos = [];
+let businessHours = [];
+let specialDates = [];
 let statusTimer;
 
 function setStatus(element, message, isError = false) {
@@ -101,18 +110,26 @@ async function uploadImage(file, folder) {
 async function loadData() {
   setStatus(globalStatus, 'Carregando informações...');
 
-  const [productsResponse, galleryResponse] = await Promise.all([
+  const [productsResponse, galleryResponse, hoursResponse, specialDatesResponse] = await Promise.all([
     db.from('products').select('*').order('sort_order', { ascending: true }),
-    db.from('gallery_photos').select('*').order('sort_order', { ascending: true })
+    db.from('gallery_photos').select('*').order('sort_order', { ascending: true }),
+    db.from('business_hours').select('*').order('day_of_week', { ascending: true }),
+    db.from('special_dates').select('*').order('date', { ascending: true })
   ]);
 
   if (productsResponse.error) throw productsResponse.error;
   if (galleryResponse.error) throw galleryResponse.error;
+  if (hoursResponse.error) throw hoursResponse.error;
+  if (specialDatesResponse.error) throw specialDatesResponse.error;
 
   products = productsResponse.data || [];
   galleryPhotos = galleryResponse.data || [];
+  businessHours = hoursResponse.data || [];
+  specialDates = specialDatesResponse.data || [];
   renderProducts();
   renderGallery();
+  renderBusinessHours();
+  renderSpecialDates();
   setStatus(globalStatus, '');
 }
 
@@ -467,6 +484,255 @@ async function createPhoto(event) {
   }
 }
 
+function shortTime(value, fallback = '') {
+  return String(value || fallback).slice(0, 5);
+}
+
+function setHoursInputsState(row, isOpen) {
+  row.classList.toggle('closed', !isOpen);
+  row.querySelectorAll('input[type="time"]').forEach((input) => {
+    input.disabled = !isOpen;
+  });
+}
+
+function renderBusinessHours() {
+  businessHoursList.replaceChildren();
+
+  dayDisplayOrder.forEach((dayOfWeek) => {
+    const saved = businessHours.find((item) => Number(item.day_of_week) === dayOfWeek);
+    const isOpen = saved?.is_open ?? (dayOfWeek >= 1 && dayOfWeek <= 5);
+
+    const row = document.createElement('div');
+    row.className = 'business-hour-row';
+    row.dataset.dayOfWeek = dayOfWeek;
+
+    const day = document.createElement('div');
+    day.className = 'business-day';
+    day.textContent = dayLabels[dayOfWeek];
+
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'toggle-label';
+    const openToggle = document.createElement('input');
+    openToggle.type = 'checkbox';
+    openToggle.name = `isOpen-${dayOfWeek}`;
+    openToggle.checked = isOpen;
+    toggleLabel.append(openToggle, document.createTextNode('Loja aberta'));
+
+    const openField = makeInput('Abre às', `openTime-${dayOfWeek}`, shortTime(saved?.open_time, '08:00'), 'time');
+    const closeField = makeInput('Fecha às', `closeTime-${dayOfWeek}`, shortTime(saved?.close_time, '18:00'), 'time');
+
+    openToggle.addEventListener('change', () => setHoursInputsState(row, openToggle.checked));
+    row.append(day, toggleLabel, openField.label, closeField.label);
+    setHoursInputsState(row, isOpen);
+    businessHoursList.appendChild(row);
+  });
+}
+
+async function saveBusinessHours(event) {
+  event.preventDefault();
+  const button = businessHoursForm.querySelector('button[type="submit"]');
+  setButtonBusy(button, true);
+
+  try {
+    const rows = Array.from(businessHoursList.querySelectorAll('.business-hour-row'));
+    const payload = rows.map((row) => {
+      const dayOfWeek = Number(row.dataset.dayOfWeek);
+      const isOpen = row.querySelector(`input[name="isOpen-${dayOfWeek}"]`).checked;
+      const openTime = row.querySelector(`input[name="openTime-${dayOfWeek}"]`).value;
+      const closeTime = row.querySelector(`input[name="closeTime-${dayOfWeek}"]`).value;
+
+      if (isOpen && (!openTime || !closeTime || openTime >= closeTime)) {
+        throw new Error(`Confira o horário de ${dayLabels[dayOfWeek]}.`);
+      }
+
+      return {
+        day_of_week: dayOfWeek,
+        is_open: isOpen,
+        open_time: isOpen ? openTime : null,
+        close_time: isOpen ? closeTime : null,
+        updated_at: new Date().toISOString()
+      };
+    });
+
+    const { error } = await db
+      .from('business_hours')
+      .upsert(payload, { onConflict: 'day_of_week' });
+
+    if (error) throw error;
+    await loadData();
+    showGlobalStatus('Horários de funcionamento atualizados.');
+  } catch (error) {
+    showGlobalStatus(error.message || 'Não foi possível salvar os horários.', true);
+  } finally {
+    setButtonBusy(button, false);
+  }
+}
+
+function formattedDate(date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'UTC',
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
+function setSpecialDateInputsState(form, isOpen) {
+  form.querySelectorAll('input[type="time"]').forEach((input) => {
+    input.disabled = !isOpen;
+  });
+}
+
+function renderSpecialDates() {
+  specialDatesList.replaceChildren();
+
+  if (!specialDates.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'Nenhuma data especial cadastrada.';
+    specialDatesList.appendChild(empty);
+    return;
+  }
+
+  specialDates.forEach((specialDate) => {
+    const form = document.createElement('form');
+    form.className = 'editor-card special-date-card';
+    form.dataset.specialDate = specialDate.date;
+
+    const status = document.createElement('span');
+    status.className = `date-status${specialDate.is_open ? '' : ' closed'}`;
+    status.textContent = specialDate.is_open ? 'Aberta' : 'Fechada';
+
+    const title = document.createElement('h3');
+    title.textContent = formattedDate(specialDate.date);
+
+    const fields = document.createElement('div');
+    fields.className = 'form-grid special-date-form-grid';
+
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'toggle-label';
+    const openToggle = document.createElement('input');
+    openToggle.type = 'checkbox';
+    openToggle.name = 'isOpen';
+    openToggle.checked = specialDate.is_open;
+    toggleLabel.append(openToggle, document.createTextNode('Loja aberta'));
+
+    const openField = makeInput('Abre às', 'openTime', shortTime(specialDate.open_time, '08:00'), 'time');
+    const closeField = makeInput('Fecha às', 'closeTime', shortTime(specialDate.close_time, '18:00'), 'time');
+    const noteField = makeInput('Observação', 'note', specialDate.note);
+    noteField.label.className = 'special-date-note';
+
+    openToggle.addEventListener('change', () => {
+      setSpecialDateInputsState(form, openToggle.checked);
+    });
+
+    fields.append(toggleLabel, openField.label, closeField.label, noteField.label);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const removeButton = document.createElement('button');
+    removeButton.className = 'admin-btn danger';
+    removeButton.type = 'button';
+    removeButton.textContent = 'Excluir';
+    removeButton.addEventListener('click', () => deleteSpecialDate(specialDate));
+    const saveButton = document.createElement('button');
+    saveButton.className = 'admin-btn primary';
+    saveButton.type = 'submit';
+    saveButton.textContent = 'Salvar data';
+    actions.append(removeButton, saveButton);
+
+    form.addEventListener('submit', (event) => saveSpecialDate(event, specialDate, saveButton));
+    form.append(status, title, fields, actions);
+    setSpecialDateInputsState(form, specialDate.is_open);
+    specialDatesList.appendChild(form);
+  });
+}
+
+function specialDatePayload(form, date) {
+  const formData = new FormData(form);
+  const isOpen = formData.get('isOpen') === 'on';
+  const openTime = String(formData.get('openTime') || '');
+  const closeTime = String(formData.get('closeTime') || '');
+
+  if (isOpen && (!openTime || !closeTime || openTime >= closeTime)) {
+    throw new Error('Confira o horário da data especial.');
+  }
+
+  return {
+    date,
+    is_open: isOpen,
+    open_time: isOpen ? openTime : null,
+    close_time: isOpen ? closeTime : null,
+    note: String(formData.get('note') || '').trim(),
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function createSpecialDate(event) {
+  event.preventDefault();
+  const button = newSpecialDateForm.querySelector('button[type="submit"]');
+  setButtonBusy(button, true);
+
+  try {
+    const date = newSpecialDateForm.elements.date.value;
+    if (!date) throw new Error('Escolha uma data.');
+    const payload = specialDatePayload(newSpecialDateForm, date);
+    const { error } = await db
+      .from('special_dates')
+      .upsert(payload, { onConflict: 'date' });
+
+    if (error) throw error;
+    newSpecialDateForm.reset();
+    newSpecialDateForm.elements.openTime.value = '08:00';
+    newSpecialDateForm.elements.closeTime.value = '18:00';
+    setSpecialDateInputsState(newSpecialDateForm, false);
+    await loadData();
+    showGlobalStatus('Data especial adicionada ao calendário.');
+  } catch (error) {
+    showGlobalStatus(error.message || 'Não foi possível salvar a data especial.', true);
+  } finally {
+    setButtonBusy(button, false);
+  }
+}
+
+async function saveSpecialDate(event, specialDate, button) {
+  event.preventDefault();
+  setButtonBusy(button, true);
+
+  try {
+    const payload = specialDatePayload(event.currentTarget, specialDate.date);
+    const { error } = await db
+      .from('special_dates')
+      .update(payload)
+      .eq('date', specialDate.date);
+
+    if (error) throw error;
+    await loadData();
+    showGlobalStatus('Data especial atualizada.');
+  } catch (error) {
+    showGlobalStatus(error.message || 'Não foi possível atualizar a data.', true);
+  } finally {
+    setButtonBusy(button, false);
+  }
+}
+
+async function deleteSpecialDate(specialDate) {
+  if (!window.confirm(`Excluir a data especial de ${formattedDate(specialDate.date)}?`)) return;
+
+  try {
+    const { error } = await db
+      .from('special_dates')
+      .delete()
+      .eq('date', specialDate.date);
+    if (error) throw error;
+    await loadData();
+    showGlobalStatus('Data especial excluída.');
+  } catch (error) {
+    showGlobalStatus(error.message || 'Não foi possível excluir a data.', true);
+  }
+}
+
 async function showAdmin() {
   loginView.classList.add('hidden');
   adminView.classList.remove('hidden');
@@ -534,7 +800,14 @@ async function initialize() {
   loginForm.addEventListener('submit', login);
   newProductForm.addEventListener('submit', createProduct);
   newPhotoForm.addEventListener('submit', createPhoto);
+  businessHoursForm.addEventListener('submit', saveBusinessHours);
+  newSpecialDateForm.addEventListener('submit', createSpecialDate);
   document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  newSpecialDateForm.elements.isOpen.addEventListener('change', (event) => {
+    setSpecialDateInputsState(newSpecialDateForm, event.currentTarget.checked);
+  });
+  setSpecialDateInputsState(newSpecialDateForm, false);
 
   document.getElementById('showNewProductBtn').addEventListener('click', () => {
     newProductForm.classList.remove('hidden');
