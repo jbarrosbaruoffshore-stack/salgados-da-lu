@@ -653,7 +653,7 @@ a:focus-visible {
   bottom: 16px;
   left: 18px;
   display: flex;
-  width: min(850px, calc(100% - 36px));
+  width: min(1040px, calc(100% - 36px));
   min-height: 76px;
   align-items: center;
   justify-content: space-between;
@@ -691,7 +691,18 @@ a:focus-visible {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
+}
+
+.pix-paid {
+  color: #321b16;
+  background: var(--yellow);
+  box-shadow: 0 12px 24px rgba(255, 201, 75, 0.2);
+}
+
+.pix-paid:hover {
+  background: #ffd86e;
 }
 
 .clear-order {
@@ -848,7 +859,7 @@ footer p {
 
 @media (max-width: 540px) {
   body.has-order-bar {
-    padding-bottom: 124px;
+    padding-bottom: 158px;
   }
 
   .topbar nav {
@@ -960,19 +971,22 @@ footer p {
     bottom: 9px;
     left: 10px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
     width: calc(100% - 20px);
-    min-height: 94px;
+    min-height: 128px;
     gap: 8px;
     padding: 11px 11px 11px 15px;
     border-radius: 20px;
   }
 
   .order-summary span {
-    max-width: 170px;
+    max-width: none;
   }
 
   .order-actions {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    width: 100%;
     gap: 4px;
   }
 

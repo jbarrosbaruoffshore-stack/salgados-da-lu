@@ -1,6 +1,8 @@
 const phone = '5521998454725';
 const pix = 'luciana.barros19766@gmail.com';
 const cartStorageKey = 'salgadosLuCart';
+const orderReferenceKey = 'salgadosLuOrderReference';
+const pixOwner = 'Luciana de Barros Santos';
 
 const fallbackProducts = [
   { id: 'bolinho-queijo', name: 'Bolinho de Queijo', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-10.jpg' },
@@ -246,6 +248,11 @@ function changeQuantity(id, amount) {
 function clearCart() {
   cart = {};
   saveCart();
+  try {
+    localStorage.removeItem(orderReferenceKey);
+  } catch {
+    // A limpeza do pedido continua mesmo se o armazenamento estiver bloqueado.
+  }
   render();
 }
 
@@ -263,21 +270,68 @@ function buildWhatsAppLink(message) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
+function orderReference() {
+  try {
+    const savedReference = localStorage.getItem(orderReferenceKey);
+    if (savedReference) return savedReference;
+
+    const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+    const randomPart = Math.random().toString(36).slice(2, 7).toUpperCase();
+    const reference = `SL-${date}-${randomPart}`;
+    localStorage.setItem(orderReferenceKey, reference);
+    return reference;
+  } catch {
+    return `SL-${Date.now().toString(36).toUpperCase()}`;
+  }
+}
+
+function selectedItemLines() {
+  return selectedItems().map(({ product, quantity }) => (
+    `• ${quantity}x ${product.name}${product.price ? ` — ${product.price}` : ''}`
+  ));
+}
+
 function buildOrderMessage() {
   const items = selectedItems();
-  const lines = ['Olá! Gostaria de fazer um pedido na Salgados da Lu.', ''];
+  const reference = orderReference();
+  const lines = [
+    'Olá! Gostaria de fazer um pedido na Salgados da Lu.',
+    `Pedido: ${reference}`,
+    ''
+  ];
 
   if (!items.length) {
     lines.push('Pode me enviar o cardápio, os valores e a disponibilidade?');
     return lines.join('\n');
   }
 
-  lines.push('Meu pedido:');
-  items.forEach(({ product, quantity }) => {
-    lines.push(`• ${quantity}x ${product.name}${product.price ? ` — ${product.price}` : ''}`);
-  });
-  lines.push('', 'Forma de pagamento:', 'Entrega ou retirada:', 'Bairro/endereço:');
+  lines.push(
+    'Meu pedido:',
+    ...selectedItemLines(),
+    '',
+    'Pagamento via Pix:',
+    `Chave Pix: ${pix}`,
+    `Titular: ${pixOwner}`,
+    '',
+    'Depois do pagamento, vou tocar em "Já paguei" no site para confirmar.',
+    '',
+    'Entrega ou retirada:',
+    'Bairro/endereço:'
+  );
+
   return lines.join('\n');
+}
+
+function buildPaymentConfirmationMessage() {
+  return [
+    'Olá! Já fiz o pagamento via Pix.',
+    `Pedido: ${orderReference()}`,
+    '',
+    'Itens pagos:',
+    ...selectedItemLines(),
+    '',
+    'Por favor, confirme o recebimento do pagamento.'
+  ].join('\n');
 }
 
 function updateOrderBar() {
@@ -285,6 +339,7 @@ function updateOrderBar() {
   const orderCount = document.getElementById('orderCount');
   const orderPreview = document.getElementById('orderPreview');
   const finishOrder = document.getElementById('finishOrder');
+  const confirmPayment = document.getElementById('confirmPayment');
   const items = selectedItems();
 
   if (!items.length) {
@@ -302,6 +357,7 @@ function updateOrderBar() {
   orderCount.textContent = `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'itens'} no pedido`;
   orderPreview.textContent = preview + (items.length > 3 ? '…' : '');
   finishOrder.href = buildWhatsAppLink(buildOrderMessage());
+  confirmPayment.href = buildWhatsAppLink(buildPaymentConfirmationMessage());
   orderBar.classList.remove('hidden');
   document.body.classList.add('has-order-bar');
 }
