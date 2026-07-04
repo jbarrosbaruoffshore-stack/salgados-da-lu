@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#8d1520" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="ADMIN SALGADOS DA LU" />
+  <title>ADMIN SALGADOS DA LU</title>
+  <link rel="canonical" href="https://jbarrosbaruoffshore-stack.github.io/salgados-da-lu/admin/" />
+  <link rel="stylesheet" href="../admin.css?v=20260704-admin-url1" />
+</head>
+<body>
+  <main class="admin-shell">
+    <section id="loginView" class="login-view">
+      <div class="login-card">
+        <div class="admin-brand" aria-hidden="true">Lu</div>
+        <p class="eyebrow">Salgados da Lu</p>
+        <h1>Painel administrativo</h1>
+        <p class="login-help">Entre para atualizar produtos, preços e fotos.</p>
+
+        <form id="loginForm" class="login-form">
+          <label>
+            Usuário
+            <input id="loginUsername" name="username" type="text" autocomplete="username" required />
+          </label>
+          <label>
+            Senha
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="admin-btn primary" type="submit">Entrar</button>
+        </form>
+        <p id="loginStatus" class="status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="adminView" class="admin-view hidden">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">Salgados da Lu</p>
+          <h1>Editar o site</h1>
+          <p>As alterações salvas aparecem no cardápio público imediatamente.</p>
+        </div>
+        <div class="header-actions">
+          <a class="admin-btn secondary" href="../" target="_blank" rel="noopener">Ver o site</a>
+          <button id="logoutBtn" class="admin-btn ghost" type="button">Sair</button>
+        </div>
+      </header>
+
+      <p id="globalStatus" class="status global-status" role="status" aria-live="polite"></p>
+
+      <nav class="admin-nav" aria-label="Seções do painel">
+        <a href="#produtos">Produtos e preços</a>
+        <a href="#horarios">Horários e calendário</a>
+        <a href="#fotos">Galeria de fotos</a>
+      </nav>
+
+      <section id="produtos" class="panel-section">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Cardápio</p>
+            <h2>Produtos e preços</h2>
+          </div>
+          <button id="showNewProductBtn" class="admin-btn primary" type="button">Adicionar produto</button>
+        </div>
+
+        <form id="newProductForm" class="editor-card new-product hidden">
+          <div class="editor-heading">
+            <div>
+              <span class="card-kicker">Novo item</span>
+              <h3>Adicionar ao cardápio</h3>
+            </div>
+            <button id="cancelNewProductBtn" class="icon-btn" type="button" aria-label="Cancelar">×</button>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Nome
+              <input name="name" type="text" required />
+            </label>
+            <label>
+              Categoria
+              <input name="category" type="text" value="Salgados" required />
+            </label>
+            <label>
+              Preço
+              <input name="price" type="text" placeholder="Ex.: R$ 8,00" />
+            </label>
+            <label>
+              Posição
+              <input name="sortOrder" type="number" min="0" step="1" value="10" />
+            </label>
+            <label class="file-label">
+              Foto do produto
+              <input name="image" type="file" accept="image/jpeg,image/png,image/webp" />
+            </label>
+            <label class="toggle-label">
+              <input name="active" type="checkbox" checked />
+              Mostrar no site
+            </label>
+          </div>
+
+          <div class="card-actions">
+            <button class="admin-btn primary" type="submit">Salvar novo produto</button>
+          </div>
+        </form>
+
+        <div id="productsList" class="editor-list" aria-live="polite"></div>
+      </section>
+
+      <section id="horarios" class="panel-section hours-admin-panel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Atendimento</p>
+            <h2>Horários e calendário</h2>
+            <p>Defina os dias normais de funcionamento e as exceções, como feriados ou aberturas especiais.</p>
+          </div>
+        </div>
+
+        <form id="businessHoursForm" class="editor-card">
+          <div class="editor-heading">
+            <div>
+              <span class="card-kicker">Semana padrão</span>
+              <h3>Horários de funcionamento</h3>
+            </div>
+          </div>
+          <div id="businessHoursList" class="business-hours-editor" aria-live="polite"></div>
+          <div class="card-actions">
+            <button class="admin-btn primary" type="submit">Salvar horários</button>
+          </div>
+        </form>
+
+        <div class="special-dates-admin">
+          <form id="newSpecialDateForm" class="editor-card">
+            <div class="editor-heading">
+              <div>
+                <span class="card-kicker">Calendário</span>
+                <h3>Adicionar data especial</h3>
+              </div>
+            </div>
+            <div class="form-grid special-date-form-grid">
+              <label>
+                Data
+                <input name="date" type="date" required />
+              </label>
+              <label class="toggle-label">
+                <input name="isOpen" type="checkbox" />
+                Loja aberta nesta data
+              </label>
+              <label>
+                Abre às
+                <input name="openTime" type="time" value="08:00" disabled />
+              </label>
+              <label>
+                Fecha às
+                <input name="closeTime" type="time" value="18:00" disabled />
+              </label>
+              <label class="special-date-note">
+                Observação
+                <input name="note" type="text" placeholder="Ex.: Feriado — loja fechada" />
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="admin-btn primary" type="submit">Adicionar ao calendário</button>
+            </div>
+          </form>
+
+          <div id="specialDatesList" class="special-dates-list" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="fotos" class="panel-section gallery-panel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Produção da Lu</p>
+            <h2>Galeria de fotos</h2>
+          </div>
+        </div>
+
+        <form id="newPhotoForm" class="editor-card new-photo">
+          <div class="form-grid photo-form-grid">
+            <label class="file-label">
+              Escolher nova foto
+              <input name="image" type="file" accept="image/jpeg,image/png,image/webp" required />
+            </label>
+            <label>
+              Descrição da foto
+              <input name="alt" type="text" placeholder="Ex.: Coxinhas preparadas pela Lu" required />
+            </label>
+            <label>
+              Posição
+              <input name="sortOrder" type="number" min="0" step="1" value="10" />
+            </label>
+            <button class="admin-btn primary" type="submit">Enviar foto</button>
+          </div>
+        </form>
+
+        <div id="galleryList" class="gallery-editor-list" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="../admin.js?v=20260704-admin-url1"></script>
+</body>
+</html>
