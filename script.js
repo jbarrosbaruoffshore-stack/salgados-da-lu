@@ -2,30 +2,81 @@ const phone = '5521998454725';
 const pix = 'luciana.barros19766@gmail.com';
 const cartStorageKey = 'salgadosLuCart';
 
-const products = [
-  { id: 'bolinho-queijo', name: 'Bolinho de Queijo', category: 'Salgados', price: '', image: 'foto-10.jpg' },
-  { id: 'risole-frango', name: 'Risole de Frango', category: 'Salgados', price: '', image: 'foto-07.jpg' },
-  { id: 'coxinha', name: 'Coxinha', category: 'Salgados', price: '', image: 'foto-05.jpg' },
-  { id: 'kibe-frito', name: 'Kibe Frito', category: 'Salgados', price: '', image: 'foto-11.jpg' },
-  { id: 'kibe-forno', name: 'Kibe de Forno', category: 'Salgados', price: '', image: 'foto-16.jpg' },
-  { id: 'empadinha', name: 'Empadinha', category: 'Salgados', price: '', image: 'foto-18.jpg' },
-  { id: 'croquete-frango', name: 'Croquete de Frango', category: 'Salgados', price: '', image: 'foto-01.jpg' },
-  { id: 'espetinho-frango', name: 'Espetinho de Frango', category: 'Salgados', price: '', image: 'foto-03.jpg' },
-  { id: 'escondidinho-camarao', name: 'Escondidinho de Camarão', category: 'Salgados', price: '', image: 'foto-09.jpg' },
-  { id: 'doce-aipim', name: 'Doce de Aipim', category: 'Doces', price: '', image: 'doce-de-aipim.jpg' },
-  { id: 'bolo-pote', name: 'Bolo de Pote', category: 'Doces', price: '', image: 'bolo-de-pote.jpg' },
-  { id: 'combo-festa', name: 'Combo para Festa', category: 'Encomendas', price: '', image: 'foto-15.jpg' }
+const fallbackProducts = [
+  { id: 'bolinho-queijo', name: 'Bolinho de Queijo', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-10.jpg' },
+  { id: 'risole-frango', name: 'Risole de Frango', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-07.jpg' },
+  { id: 'coxinha', name: 'Coxinha', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-05.jpg' },
+  { id: 'kibe-frito', name: 'Kibe Frito', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-11.jpg' },
+  { id: 'kibe-forno', name: 'Kibe de Forno', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-16.jpg' },
+  { id: 'empadinha', name: 'Empadinha', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-18.jpg' },
+  { id: 'croquete-frango', name: 'Croquete de Frango', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-01.jpg' },
+  { id: 'espetinho-frango', name: 'Espetinho de Frango', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-03.jpg' },
+  { id: 'escondidinho-camarao', name: 'Escondidinho de Camarão', category: 'Salgados', price: '', image_url: 'assets/fotos/foto-09.jpg' },
+  { id: 'doce-aipim', name: 'Doce de Aipim', category: 'Doces', price: '', image_url: 'assets/fotos/doce-de-aipim.jpg' },
+  { id: 'bolo-pote', name: 'Bolo de Pote', category: 'Doces', price: '', image_url: 'assets/fotos/bolo-de-pote.jpg' },
+  { id: 'combo-festa', name: 'Combo para Festa', category: 'Encomendas', price: '', image_url: 'assets/fotos/foto-15.jpg' }
 ];
 
-const galleryPhotos = [
-  { src: 'assets/fotos/foto-02.jpg', alt: 'Salgados preparados pela Lu' },
-  { src: 'assets/fotos/foto-05.jpg', alt: 'Coxinhas da Salgados da Lu' },
-  { src: 'assets/fotos/foto-16.jpg', alt: 'Kibe de forno preparado pela Lu' },
-  { src: 'assets/fotos/foto-19.jpg', alt: 'Produção da Salgados da Lu' }
+const fallbackGalleryPhotos = [
+  { image_url: 'assets/fotos/foto-02.jpg', alt: 'Salgados preparados pela Lu' },
+  { image_url: 'assets/fotos/foto-05.jpg', alt: 'Coxinhas da Salgados da Lu' },
+  { image_url: 'assets/fotos/foto-16.jpg', alt: 'Kibe de forno preparado pela Lu' },
+  { image_url: 'assets/fotos/foto-19.jpg', alt: 'Produção da Salgados da Lu' }
 ];
 
+let products = [...fallbackProducts];
+let galleryPhotos = [...fallbackGalleryPhotos];
 let cart = loadCart();
 let selectedCategory = 'Todos';
+
+function catalogClient() {
+  const config = window.SALGADOS_ADMIN_CONFIG || {};
+  const configured =
+    config.supabaseUrl &&
+    config.supabaseAnonKey &&
+    !config.supabaseUrl.startsWith('COLE_') &&
+    !config.supabaseAnonKey.startsWith('COLE_') &&
+    window.supabase?.createClient;
+
+  return configured
+    ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey)
+    : null;
+}
+
+async function loadCatalog() {
+  const client = catalogClient();
+  if (!client) {
+    renderGallery();
+    render();
+    return;
+  }
+
+  try {
+    const [productsResponse, galleryResponse] = await Promise.all([
+      client
+        .from('products')
+        .select('id,name,category,price,image_url,sort_order')
+        .eq('active', true)
+        .order('sort_order', { ascending: true }),
+      client
+        .from('gallery_photos')
+        .select('id,image_url,alt,sort_order')
+        .eq('active', true)
+        .order('sort_order', { ascending: true })
+    ]);
+
+    if (productsResponse.error) throw productsResponse.error;
+    if (galleryResponse.error) throw galleryResponse.error;
+
+    products = productsResponse.data || [];
+    galleryPhotos = galleryResponse.data || [];
+  } catch (error) {
+    console.warn('O cardápio online não pôde ser carregado. Usando a cópia local.', error);
+  }
+
+  renderGallery();
+  render();
+}
 
 function loadCart() {
   try {
@@ -49,7 +100,7 @@ function categories() {
 }
 
 function moneyText(product) {
-  return product.price.trim() || 'Consulte o valor';
+  return String(product.price || '').trim() || 'Consulte o valor';
 }
 
 function renderFilters() {
@@ -99,9 +150,9 @@ function createProductCard(product) {
 
   const image = document.createElement('img');
   image.className = 'item-img';
-  image.src = `assets/fotos/${product.image}`;
+  image.src = product.image_url || 'assets/logo/logo-salgados-da-lu.png';
   image.alt = product.name;
-  setImageDimensions(image, product.image);
+  setImageDimensions(image, product.image_url);
   image.loading = 'lazy';
 
   const body = document.createElement('div');
@@ -168,9 +219,9 @@ function renderGallery() {
   const figures = galleryPhotos.map((photo) => {
     const figure = document.createElement('figure');
     const image = document.createElement('img');
-    image.src = photo.src;
+    image.src = photo.image_url;
     image.alt = photo.alt;
-    setImageDimensions(image, photo.src);
+    setImageDimensions(image, photo.image_url);
     image.loading = 'lazy';
     figure.appendChild(image);
     return figure;
@@ -277,5 +328,4 @@ document.getElementById('resetBtn').addEventListener('click', clearCart);
 document.getElementById('copyPixBtn').addEventListener('click', copyPix);
 
 setupLinks();
-renderGallery();
-render();
+loadCatalog();
